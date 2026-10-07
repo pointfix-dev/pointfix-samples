@@ -1,0 +1,55 @@
+name: PointfixSample
+options:
+  deploymentTarget:
+    iOS: "26.0"
+packages:
+  Pointfix:
+    url: https://github.com/pointfix-dev/pointfix-ios
+    from: 0.2.0
+targets:
+  PointfixSample:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    dependencies:
+      - package: Pointfix
+        product: PointfixKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.pointfix.sample
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SWIFT_VERSION: "6.0"
+        CODE_SIGNING_ALLOWED: NO
+  PointfixSampleTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: PointfixSample
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        CODE_SIGNING_ALLOWED: NO
+  PointfixSampleUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: PointfixSample
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        CODE_SIGNING_ALLOWED: NO
+schemes:
+  PointfixSample:
+    build:
+      targets:
+        PointfixSample: all
+        PointfixSampleTests: [test]
+        PointfixSampleUITests: [test]
+    test:
+      targets: [PointfixSampleTests, PointfixSampleUITests]

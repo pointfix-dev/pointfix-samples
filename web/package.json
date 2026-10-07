@@ -1,0 +1,17 @@
+{
+  "name": "pointfix-sample-web",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@pointfix/web": "^0.2.0"
+  },
+  "devDependencies": {
+    "vite": "^6.4.0"
+  }
+}

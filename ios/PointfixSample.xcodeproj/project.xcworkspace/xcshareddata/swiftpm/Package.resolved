@@ -1,0 +1,15 @@
+{
+  "originHash" : "8619c00c68b590c22b8e6dbfbda2e23e5b1fd82ba13c72fc46d088e41aad7a75",
+  "pins" : [
+    {
+      "identity" : "pointfix-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfix-dev/pointfix-ios",
+      "state" : {
+        "revision" : "cdac2985ffc9d2ddead4f3a0898e7130be8b18fa",
+        "version" : "0.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}

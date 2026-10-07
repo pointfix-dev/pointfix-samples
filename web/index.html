@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Field Supply · Pointfix web sample</title>
+<!-- Intentional demo flaw: product names use white-space:nowrap with no ellipsis, so the long
+     "Oversized Corduroy Trucker Jacket" name runs past the right edge of its card. -->
+<style>
+:root{--lime:#8be05a;--lime-d:#6fc43f;--ink:#161816;--muted:#7b8078;--surface:#f2f3f0;--line:#e6e8e3;--card:#fff;--r:20px;--gut:clamp(16px,4vw,48px);--ease:cubic-bezier(.2,.8,.2,1)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#fafbf8;color:var(--ink);font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--lime-d);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--gut)}
+.demo-bar{background:var(--ink);color:#cfd3cb;font-size:12px;text-align:center;padding:9px 16px}
+.demo-bar a{color:var(--lime)}
+/* header: one element, re-laid out per breakpoint */
+.site-head{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top{display:grid;align-items:center;gap:12px 16px;padding-top:14px;padding-bottom:14px;
+  grid-template-columns:1fr auto;grid-template-areas:"who bag" "search search"}
+.brand{grid-area:brand;display:none;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.4px;white-space:nowrap}
+.brand i{width:30px;height:30px;border-radius:10px;background:var(--ink);display:grid;place-items:center}
+.who-wrap{grid-area:who;position:relative;justify-self:start}
+.who{display:flex;align-items:center;gap:10px;border-radius:999px;padding:4px 10px 4px 4px;text-align:left}
+.who:hover{background:var(--surface)}
+.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#d6f5c2,var(--lime));display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.who small{display:block;color:var(--muted);font-size:12px}
+.who b{font-size:16px;white-space:nowrap}
+.chev{transition:transform .2s var(--ease)}
+.who[aria-expanded=true] .chev{transform:rotate(180deg)}
+.menu{position:absolute;top:52px;left:0;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.2);padding:6px;min-width:180px;z-index:30}
+.menu button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:10px}
+.menu button:hover{background:var(--surface)}
+.icon-btn{grid-area:bag;width:44px;height:44px;border-radius:50%;background:var(--surface);display:grid;place-items:center;position:relative}
+.icon-btn:hover{background:#e7e9e3}
+.badge{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--lime);color:var(--ink);font-size:11px;font-weight:700;display:grid;place-items:center;border:2px solid #fff}
+.badge.bump{animation:bump .4s var(--ease)}
+@keyframes bump{40%{transform:scale(1.35)}}
+.search{grid-area:search;display:flex;gap:10px}
+.field{flex:1;display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:16px;padding:0 14px;height:48px}
+.field input{border:0;background:none;outline:0;flex:1;min-width:0;font-size:15px}
+.field input::placeholder{color:var(--muted)}
+.field:focus-within{box-shadow:0 0 0 2px var(--lime) inset}
+.filter{width:48px;height:48px;border-radius:16px;background:var(--lime);display:grid;place-items:center;flex:none}
+.filter:hover{background:var(--lime-d)}
+/* nav: bottom tab bar on mobile, header links on larger screens */
+.tabs{grid-area:nav;position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding:10px 16px 70px}
+.tab{height:44px;min-width:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);padding:0 12px;transition:background .25s var(--ease),color .25s}
+.tab span{display:none;font-weight:600}
+.tab[aria-current=page]{background:var(--lime);color:var(--ink);padding:0 18px}
+.tab[aria-current=page] span{display:inline}
+.tab:not([aria-current=page]):hover{color:var(--ink)}
+main.wrap{padding-top:18px;padding-bottom:150px}
+/* promo */
+.promo{background:var(--ink);color:#fff;border-radius:24px;padding:22px 22px 40px;position:relative;overflow:hidden;min-height:168px}
+.slide{position:absolute;inset:22px 22px auto;opacity:0;transform:translateX(16px);transition:opacity .2s,transform .2s;pointer-events:none;max-width:58%;z-index:1}
+.slide.on{opacity:1;transform:none;pointer-events:auto;position:relative;inset:auto;transition:opacity .4s var(--ease) .18s,transform .4s var(--ease) .18s}
+.slide p{margin:0;color:#b9beb4;font-size:13px}
+.slide h2{margin:4px 0 14px;font-size:26px;line-height:1.1;letter-spacing:-.5px}
+.slide h2 em{font-style:normal;color:var(--lime)}
+.slide .sub{display:none}
+.shop{background:var(--lime);color:var(--ink);font-weight:600;border-radius:999px;padding:10px 18px;font-size:13px}
+.shop:hover{background:#a2ec77}
+.art{position:absolute;right:-30px;top:50%;transform:translateY(-50%);width:200px;height:200px;pointer-events:none}
+.dots{position:absolute;left:22px;bottom:14px;display:flex;gap:6px;z-index:1}
+.dots button{width:6px;height:6px;border-radius:3px;background:#4a4e48;transition:width .3s var(--ease),background .3s}
+.dots button[aria-current=true]{width:18px;background:var(--lime)}
+/* chips */
+.chips{display:flex;gap:8px;overflow-x:auto;margin:20px calc(-1 * var(--gut)) 0;padding:0 var(--gut) 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:38px;padding:0 16px;border-radius:999px;background:var(--surface);font-weight:500;display:flex;align-items:center;gap:6px;transition:background .2s,color .2s}
+.chip:hover{background:#e7e9e3}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff}
+.chip .spark{display:none;color:var(--lime)}
+.chip[aria-pressed=true] .spark{display:block}
+/* section + grid */
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 12px}
+.sec h3{margin:0;font-size:18px;letter-spacing:-.2px}
+.sec a{color:var(--muted);font-size:13px;text-decoration:none}
+.sec a:hover{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--line);padding:8px;display:flex;flex-direction:column;transition:box-shadow .25s var(--ease),transform .25s var(--ease)}
+.card:hover{box-shadow:0 16px 40px -20px rgba(22,24,22,.25);transform:translateY(-2px)}
+.tile{position:relative;border-radius:16px;aspect-ratio:1/1.05;display:grid;place-items:center}
+.tile svg.g{width:62%;height:62%}
+.fav{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.fav svg{transition:transform .2s var(--ease)}
+.fav[aria-pressed=true] svg{fill:#ef4d5a;stroke:#ef4d5a;transform:scale(1.1)}
+.info{padding:10px 4px 4px;position:relative}
+.cat{color:var(--muted);font-size:11.5px}
+.name{font-weight:600;font-size:14px;margin:2px 0 6px;white-space:nowrap}
+.row{display:flex;align-items:center;justify-content:space-between}
+.price b{font-size:15px}
+.price s{color:var(--muted);font-size:12px;margin-left:4px}
+.add{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;transition:background .2s,transform .2s var(--ease)}
+.add:hover{background:var(--lime);color:var(--ink)}
+.add:active{transform:scale(.9)}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:30px 0}
+.toast{position:fixed;left:50%;bottom:150px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;opacity:0;transition:.3s var(--ease);pointer-events:none;z-index:40}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+/* tablet */
+@media(min-width:640px){
+  .top{grid-template-columns:auto minmax(0,1fr) auto auto auto;grid-template-areas:"brand search nav who bag"}
+  .brand{display:flex}
+  .who small,.who b{display:none}
+  .who{padding-right:6px}
+  .tab[aria-current=page] span{display:none}
+  .search{min-width:220px}
+  .avatar{width:36px;height:36px}
+  .tabs{position:static;background:none;backdrop-filter:none;border:0;padding:0;gap:2px}
+  .tab{height:40px;padding:0 10px}
+  .tab[aria-current=page]{padding:0 14px}
+  main.wrap{padding-top:28px;padding-bottom:64px}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  .name{font-size:15px}
+  .promo{min-height:220px;padding:36px 36px 56px}
+  .slide{inset:36px 36px auto}
+  .slide h2{font-size:36px}
+  .dots{left:36px;bottom:22px}
+  .art{width:300px;height:300px;right:-20px}
+  .chips{margin-left:0;margin-right:0;padding:0 0 4px}
+  .toast{bottom:32px}
+}
+/* desktop */
+@media(min-width:1024px){
+  .top{grid-template-columns:auto minmax(0,1fr) auto auto auto;gap:28px;padding-top:16px;padding-bottom:16px}
+  .search{max-width:560px;width:100%;justify-self:center}
+  .tab span,.tab[aria-current=page] span,.who b{display:inline}
+  .who{padding-right:10px}
+  .tab{padding:0 14px}
+  .who small{display:block}
+  .tab svg{display:none}
+  .tab[aria-current=page] svg{display:block}
+  .promo{min-height:340px;padding:56px 56px 84px;border-radius:32px}
+  .slide{inset:56px 56px auto;max-width:520px}
+  .slide p{font-size:15px}
+  .slide h2{font-size:56px;letter-spacing:-1.5px;margin:6px 0 12px}
+  .slide .sub{display:block;color:#9da397;font-size:15px;margin:0 0 24px;max-width:400px}
+  .shop{padding:14px 26px;font-size:15px}
+  .art{width:300px;height:300px;right:80px}
+  .dots{left:56px;bottom:30px}
+  .sec{margin:36px 0 16px}
+  .sec h3{font-size:24px}
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+}
+@media(min-width:1280px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="demo-bar">Capture demo · Click “Report UI issue” (or Alt + Shift + click) to report anything on this page.</div>
+
+<header class="site-head" id="shop.app">
+  <div class="wrap top">
+    <a class="brand" href="#" data-testid="shop.brand" aria-label="Field Supply home" style="color:inherit;text-decoration:none"><i aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="#8be05a"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg></i>Field Supply</a>
+    <div class="search">
+      <label class="field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7b8078" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="shop.search" data-testid="shop.search" type="search" placeholder="Explore Fashion" aria-label="Search products" autocomplete="off">
+      </label>
+      <button class="filter" id="shop.filter" data-testid="shop.filter" aria-label="Filters">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#161816" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
+    <nav class="tabs" aria-label="Main">
+      <button class="tab" data-testid="tab.home" aria-current="page" aria-label="Home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 10 12 4l8 6v10h-5v-6H9v6H4z"/></svg><span>Home</span></button>
+      <button class="tab" data-testid="tab.bag" aria-label="Bag"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Bag</span></button>
+      <button class="tab" data-testid="tab.favorites" aria-label="Favorites"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><span>Favorites</span></button>
+      <button class="tab" data-testid="tab.profile" aria-label="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Profile</span></button>
+    </nav>
+    <div class="who-wrap">
+      <button class="who" id="account.menu" data-testid="account.menu" aria-label="Account menu" aria-haspopup="true" aria-expanded="false">
+        <span class="avatar" aria-hidden="true">AM</span>
+        <span><small>Good morning</small><b>Hey, Alex</b></span>
+        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="menu" id="account.dropdown" role="menu" hidden>
+        <button role="menuitem" data-testid="account.orders">My orders</button>
+        <button role="menuitem" data-testid="account.settings">Settings</button>
+        <button role="menuitem" data-testid="account.signout">Sign out</button>
+      </div>
+    </div>
+    <button class="icon-btn" id="nav.bag" data-testid="nav.bag" aria-label="Shopping bag, 2 items">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <span class="badge" id="bag.count" data-testid="bag.count">2</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="promo" id="promo.banner" data-testid="promo.banner" aria-roledescription="carousel" aria-label="Promotions">
+    <div class="slide on" data-i="0"><p>Super Sale Discount</p><h2>Up to <em>50%</em></h2><p class="sub">Season-end markdowns across dresses, outerwear and denim.</p><button class="shop" id="promo.shopNow" data-testid="promo.shopNow">Shop Now</button></div>
+    <div class="slide" data-i="1"><p>New Season Drop</p><h2>Autumn <em>Layers</em></h2><p class="sub">Corduroy, fleece and wool, cut for cooler days.</p><button class="shop" data-testid="promo.explore">Explore</button></div>
+    <div class="slide" data-i="2"><p>Members Only</p><h2>Free <em>Shipping</em></h2><p class="sub">Join free and every order ships on us, no minimum.</p><button class="shop" data-testid="promo.join">Join Free</button></div>
+    <svg class="art" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+      <circle cx="100" cy="100" r="96" stroke="#8be05a" stroke-opacity=".15" stroke-width="10"/>
+      <circle cx="100" cy="100" r="72" stroke="#8be05a" stroke-opacity=".3" stroke-width="10"/>
+      <circle cx="100" cy="100" r="48" stroke="#8be05a" stroke-opacity=".55" stroke-width="10"/>
+      <circle cx="100" cy="100" r="22" fill="#8be05a"/>
+      <path d="M100 4a96 96 0 0 1 96 96" stroke="#8be05a" stroke-width="10" stroke-linecap="round"/>
+      <path d="M28 100a72 72 0 0 1 72-72" stroke="#8be05a" stroke-width="10" stroke-linecap="round"/>
+    </svg>
+    <div class="dots" role="tablist" aria-label="Choose promotion">
+      <button role="tab" aria-label="Promotion 1" aria-current="true" data-testid="promo.dot.1"></button>
+      <button role="tab" aria-label="Promotion 2" data-testid="promo.dot.2"></button>
+      <button role="tab" aria-label="Promotion 3" data-testid="promo.dot.3"></button>
+    </div>
+  </section>
+
+  <nav class="chips" id="shop.categories" aria-label="Categories"></nav>
+
+  <div class="sec"><h3>Special For You</h3><a href="#" id="shop.seeAll" data-testid="shop.seeAll">See All</a></div>
+  <div class="grid" id="shop.grid" data-testid="shop.grid" aria-live="polite"></div>
+</main>
+<div class="toast" id="shop.toast" role="status"></div>
+
+<script>
+(() => {
+  const SPARK = '<svg class="spark" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>';
+  // Garment silhouettes, drawn in a 100x100 box.
+  const ART = {
+    dress: 'M38 10h24l-4 16 18 64H24l18-64z',
+    jacket: 'M38 12h24l20 10 8 58H76l-6-38v50H30V42l-6 38H10l8-58z',
+    hoodie: 'M34 20c2-14 30-14 32 0l18 8 6 50H78l-6-34v46H28V44l-6 34H10l6-50z',
+    jeans: 'M30 10h40l4 82H56l-6-50-6 50H26z',
+    shoe: 'M12 62c10 0 18-6 24-18l10 4c6 8 18 14 34 16 6 1 8 6 8 12v6H12z'
+  };
+  const DETAIL = { jacket: 'M50 14v76M38 12l12 14 12-14', hoodie: 'M50 34v58M40 60h20', jeans: 'M30 18h40', dress: 'M40 26h20' };
+  const P = [
+    ['Linen Wrap Dress','Dresses','Dresses Women',89,120,'#f6e6dc','#d98f6b','dress'],
+    ['Cropped Bomber','Jackets','Outerwear Women',129,null,'#e3ecdc','#5d7a4c','jacket'],
+    ['Cloud Fleece Hoodie','Hoodies','Hoodies Unisex',64,80,'#e4e8f4','#6b7bb5','hoodie'],
+    ['Straight Leg Jeans','Jeans','Denim Men',72,null,'#dfe7ee','#3f5f80','jeans'],
+    ['Court Low Sneaker','Shoes','Footwear Unisex',98,140,'#f3f3ea','#2b2e2a','shoe'],
+    ['Oversized Corduroy Trucker Jacket','Jackets','Outerwear Men',149,null,'#f1e7d4','#a47a3a','jacket'],
+    ['Satin Slip Dress','Dresses','Dresses Women',110,null,'#efe0ee','#9b5d94','dress'],
+    ['Fleece Zip Hoodie','Hoodies','Hoodies Men',79,null,'#e9f3df','#6aa83f','hoodie'],
+    ['Wide Leg Jeans','Jeans','Denim Women',84,96,'#e2e6f0','#4b5b8f','jeans'],
+    ['Leather Chelsea Boot','Shoes','Footwear Women',165,null,'#ece4dc','#6b4a35','shoe']
+  ].map(([name,cat,line,price,old,bg,fg,art]) => ({name,cat,line,price,old,bg,fg,art,slug:name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),fav:false}));
+  P[1].fav = P[4].fav = true;
+
+  const $ = s => document.querySelector(s);
+  const state = { cat: 'All', q: '', bag: 2 };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Categories
+  const chips = $('#shop\\.categories');
+  ['All','Dresses','Jackets','Hoodies','Jeans','Shoes'].forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.testid = 'category.' + c.toLowerCase(); b.id = b.dataset.testid;
+    b.setAttribute('aria-pressed', c === state.cat); b.innerHTML = SPARK + c;
+    b.onclick = () => { state.cat = c; chips.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); };
+    chips.append(b);
+  });
+
+  // Grid
+  const grid = $('#shop\\.grid');
+  function render() {
+    const q = state.q.trim().toLowerCase();
+    const list = P.filter(p => (state.cat === 'All' || p.cat === state.cat) && p.name.toLowerCase().includes(q));
+    grid.innerHTML = list.length ? list.map(p => `
+      <article class="card" data-testid="product.${p.slug}" aria-label="${p.name}">
+        <div class="tile" style="background:${p.bg}">
+          <svg class="g" viewBox="0 0 100 100" aria-hidden="true"><path d="${ART[p.art]}" fill="${p.fg}" stroke="${p.fg}" stroke-width="2" stroke-linejoin="round"/>${DETAIL[p.art] ? `<path d="${DETAIL[p.art]}" fill="none" stroke="${p.bg}" stroke-width="2.5" stroke-linecap="round"/>` : ''}</svg>
+          <button class="fav" data-testid="product.${p.slug}.favorite" data-slug="${p.slug}" aria-pressed="${p.fav}" aria-label="Favorite ${p.name}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#161816" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+          </button>
+        </div>
+        <div class="info">
+          <div class="cat">${p.line}</div>
+          <div class="name">${p.name}</div>
+          <div class="row">
+            <span class="price"><b>$${p.price}</b>${p.old ? `<s>$${p.old}</s>` : ''}</span>
+            <button class="add" data-testid="product.${p.slug}.add" data-slug="${p.slug}" aria-label="Add ${p.name} to bag">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+        </div>
+      </article>`).join('') : '<p class="empty">No items match your search.</p>';
+  }
+  grid.addEventListener('click', e => {
+    const fav = e.target.closest('.fav'), add = e.target.closest('.add');
+    if (fav) { const p = P.find(x => x.slug === fav.dataset.slug); p.fav = !p.fav; fav.setAttribute('aria-pressed', p.fav); }
+    if (add) {
+      const p = P.find(x => x.slug === add.dataset.slug);
+      const badge = $('#bag\\.count');
+      badge.textContent = ++state.bag;
+      $('#nav\\.bag').setAttribute('aria-label', `Shopping bag, ${state.bag} items`);
+      badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
+      toast(`${p.name} added to bag`);
+    }
+  });
+  $('#shop\\.search').addEventListener('input', e => { state.q = e.target.value; render(); });
+
+  let tt; function toast(msg) { const t = $('#shop\\.toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 1600); }
+  $('#shop\\.filter').onclick = () => toast('Filters coming soon');
+  $('#promo\\.shopNow').onclick = () => toast('Sale collection opened');
+  $('#shop\\.seeAll').onclick = e => { e.preventDefault(); chips.querySelector('.chip').click(); toast('Showing all items'); };
+
+  // Account menu
+  const who = $('#account\\.menu'), menu = $('#account\\.dropdown');
+  who.onclick = e => { e.stopPropagation(); const open = menu.hidden; menu.hidden = !open; who.setAttribute('aria-expanded', open); };
+  document.addEventListener('click', () => { menu.hidden = true; who.setAttribute('aria-expanded', false); });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => document.querySelectorAll('.tab').forEach(x => x === t ? x.setAttribute('aria-current', 'page') : x.removeAttribute('aria-current')));
+
+  // Promo carousel
+  const slides = document.querySelectorAll('.slide'), dots = document.querySelectorAll('.dots button');
+  let cur = 0, timer;
+  function show(i) { cur = i; slides.forEach((s, k) => s.classList.toggle('on', k === i)); dots.forEach((d, k) => d.setAttribute('aria-current', k === i)); }
+  function start() { if (!reduce) { clearInterval(timer); timer = setInterval(() => show((cur + 1) % slides.length), 4000); } }
+  dots.forEach((d, k) => d.onclick = () => { show(k); start(); });
+  start();
+
+  render();
+})();
+</script>
+<script type="module" src="/main.js"></script>
+</body>
+</html>
