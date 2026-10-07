@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@pointfix/web": "^0.2.0"
+    "@pointfix/web": "^1.0.0"
   },
   "devDependencies": {
     "vite": "^6.4.0"
